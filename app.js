@@ -1,7 +1,9 @@
 const express = require('express');
 const moongose = require('mongoose');
 const ejs = require('ejs');
-const Post = require('./models/Post');
+const methodOverride = require('method-override');
+const postController = require('./controllers/postController')
+const pageController = require('./controllers/pageController')
 
 const app = express();
 
@@ -11,45 +13,34 @@ moongose.connect('mongodb://localhost/cleanblog-test-db', {
   useUnifiedTopology: true,
 });
 
+// TEMPLATE ENGINE
 app.set('view engine', 'ejs');
 
+//MIDDLEWARES
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-app.get('/', async (req, res) => {
-  const posts = await Post.find({});
-  // const blog = { id: 1, title: "Blog title", description: "Blog description" }
-  // res.send(blog)
-  res.render('index', {
-    posts: posts
-  });
-});
-
-app.get('/posts/:id', async(req, res) => {
-  
-  const post = await Post.findById(req.params.id)
-  res.render('post', {
-    post: post
+app.use(
+  methodOverride('_method', {
+    methods: ['POST', 'GET'],
   })
-});
+);
 
-app.get('/about', (req, res) => {
-  res.render('about');
-});
+//ROUTES
+app.get('/',postController.getAllPost);
+app.get('/posts/:id',postController.getPost);
+app.post('/posts',postController.createPost);
+app.put('/posts/:id',postController.updatePost);
+app.delete('/posts/:id', postController.deletePost);
 
-app.get('/add_post', (req, res) => {
-  res.render('add_post');
-});
+app.get('/about',pageController.getAboutPage);
+app.get('/add_post',pageController.getAddPostPage);
+app.get('/posts/edit/:id', pageController.getEditPage); //get request ile edit.ejs sayfasına yani post bilgileri güncelleme sayfasına yönlendirme
+
 
 // app.get('/post', (req, res) => {
 //   res.render('post');
 // });
-
-app.post('/posts', async (req, res) => {
-  await Post.create(req.body);
-  res.redirect('/');
-});
 
 const port = 3000;
 
